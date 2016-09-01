@@ -20,7 +20,7 @@ namespace CaptureMSDN
         private void button1_Click(object sender, EventArgs e)
         {
             string url = "https://msdn.microsoft.com/zh-cn/library/3tz250sf.aspx";
-            textBox1.Text = capture.WebCapturesStr(url, "mainBody");
+            textBox1.Text = capture.WebCapturesStr(url, "mainBody", capture.getpara());
         }
 
         private void textBox1_KeyDown(object sender, KeyEventArgs e)

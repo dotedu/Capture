@@ -8,35 +8,32 @@ namespace CaptureMSDN
 {
     public class CaptureParameter
     {
-        public MethodEnum Method { get; set; }
-        public Node OldNode { get; set; }
-        public Node NewNode { get; set; }
+        public GetMainMethodEnum GetMainMethod { get; set; }
+        public string GetMainString { get; set; }
+        public IList<NodeOperate> nodeOperate { get; set; }
+    }
 
+
+    public class NodeOperate
+    {
+        public MethodEnum method { get; set; }
+        public IList<ParameterList> parameterlist { get; set; }
 
     }
 
-    public class Node
+    public class ParameterList
     {
-        public List<string[]> NodeInfo { get; set; }
+        public IList<string> parameter { get; set; }
 
     }
 
 
     public enum MethodEnum
     {
-        /// <summary>
-        /// 
-        /// </summary>
         Remove,
 
         RemoveAll,
-        /// <summary>
-        /// 
-        /// </summary>
         Replace,
-        /// <summary>
-        /// 
-        /// </summary>
         AddParent,
 
         AddChildren,
@@ -47,4 +44,14 @@ namespace CaptureMSDN
 
 
     }
+
+    public enum GetMainMethodEnum
+    {
+        Id,
+        Xpath,
+
+
+
+    }
+
 }

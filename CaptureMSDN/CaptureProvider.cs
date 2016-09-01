@@ -11,19 +11,19 @@ namespace CaptureMSDN
     public class CaptureProvider
     {
 
-        public void CaptureFun(HtmlNode node, CaptureParameter parameter)
+        public void CaptureFun(HtmlNode node, NodeOperate Operate)
         {
-            Debug.Write(parameter.Method);
-            switch (parameter.Method)
+            Debug.Write(Operate.method);
+            switch (Operate.method)
             {
                 case MethodEnum.RemoveAll:
-                    RemoveAll(node, parameter.OldNode.NodeInfo);
+                        RemoveAll(node, Operate.parameter);
                     break;
                 case MethodEnum.Remove:
-                    RemoveKeep(node, parameter.OldNode.NodeInfo);
+                        RemoveKeep(node, Operate.parameter);
                     break;
                 case MethodEnum.Replace:
-                    Console.WriteLine("您通过了");
+                    //Console.WriteLine("您通过了");
                     break;
                 default:
                     break;
@@ -31,18 +31,18 @@ namespace CaptureMSDN
 
         }
 
-        private void RemoveAll(HtmlNode node, List<string[]> NodeInfo)
+        private void RemoveAll(HtmlNode node, IList<List<string>> parameter)
         {
             Remove(node, NodeInfo, false);
         }
 
-        private void RemoveKeep(HtmlNode node, List<string[]> NodeInfo)
+        private void RemoveKeep(HtmlNode node, IList<List<string>> parameter)
         {
             Remove(node, NodeInfo, true);
         }
 
 
-        private void Remove(HtmlNode node, List<string[]> NodeInfo, bool keepGrandChildren)
+        private void Remove(HtmlNode node, IList<List<string>> OldNode, bool keepGrandChildren)
         {
             if (NodeInfo == null)
                 return;
@@ -54,11 +54,12 @@ namespace CaptureMSDN
                     {
                         if (node.Name == item[0])
                         {
-                            if (item[0]==null)
+                            if (item[1]==null)
                             {
                                 if (keepGrandChildren)
                                 {
-                                    node.ParentNode.RemoveChild(node, true);
+                                    //node.ParentNode.RemoveChild(node, true);
+                                    node.RemoveNodeKeepChildren();
                                 }
                                 else
                                 {
@@ -66,13 +67,13 @@ namespace CaptureMSDN
                                 }
 
                             }
-                            else
+                            else if (item[1] == "")
                             {
                                 if (!node.HasAttributes)
                                 {
                                     if (keepGrandChildren)
                                     {
-                                        node.ParentNode.RemoveChild(node, true);
+                                        node.RemoveNodeKeepChildren();
                                     }
                                     else
                                     {
@@ -101,7 +102,7 @@ namespace CaptureMSDN
                                 {
                                     if (keepGrandChildren)
                                     {
-                                        node.ParentNode.RemoveChild(node, true);
+                                        node.RemoveNodeKeepChildren();
                                     }
                                     else
                                     {
@@ -140,8 +141,5 @@ namespace CaptureMSDN
                 }
             }
         }
-
-
-
     }
 }
