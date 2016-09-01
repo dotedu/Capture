@@ -11,6 +11,9 @@ namespace CaptureMSDN
 {
     class Capture
     {
+
+        CaptureProvider capture = new CaptureProvider();
+
         public void WebCapture(string url, string filepath)
         {
             try
@@ -67,23 +70,80 @@ namespace CaptureMSDN
                 HtmlDocument mainBody = new HtmlDocument();
                 mainBody.LoadHtml(MainCapturesById(url,id));
 
-            //object[,] DelParam=null;
-            List<object[]> DelParam = new List<object[]>();
-            DelParam.Add(new object[] { "class", "codeSnippetToolBar", null });
-            DelParam.Add(new object[] { "class", "codeSnippetContainerTabs", null });
-            DelParam.Add(new object[] { "class", "LW_CollapsibleArea_Anchor_Div", null });
-            DelParam.Add(new object[] { "class", "LW_CollapsibleArea_TitleAhref", true });
-            DelParam.Add(new object[] { "class", "LW_CollapsibleArea_HrDiv", null });
-            DelParam.Add(new object[] { "class", "cl_CollapsibleArea_expanding LW_CollapsibleArea_Img", null });
-            DelParam.Add(new object[] { "class", "LW_CollapsibleArea_Title", true });
+            List<CaptureParameter> param = new List<CaptureParameter>();
 
-            DelByAttribtes(mainBody.DocumentNode, DelParam);
-                
-                string result = mainBody.DocumentNode.OuterHtml;
+            CaptureParameter removeall = new CaptureParameter();
+
+            removeall.Method = MethodEnum.RemoveAll;
+
+            removeall.OldNode = new Node();
+            removeall.OldNode.NodeInfo = new List<string[]>();
+            removeall.OldNode.NodeInfo.Add(new string[] { null, "class", "codeSnippetToolBar" });
+            removeall.OldNode.NodeInfo.Add(new string[] { null, "class", "codeSnippetContainerTabs" });
+            removeall.OldNode.NodeInfo.Add(new string[] { null, "class", "LW_CollapsibleArea_Anchor_Div" });
+            removeall.OldNode.NodeInfo.Add(new string[] { null, "class", "LW_CollapsibleArea_HrDiv" });
+            removeall.OldNode.NodeInfo.Add(new string[] { null, "class", "cl_CollapsibleArea_expanding LW_CollapsibleArea_Img" });
+            param.Add(removeall);
+
+            CaptureParameter removekeep = new CaptureParameter();
+            removekeep.Method = MethodEnum.Remove;
+            removekeep.OldNode = new Node();
+            removekeep.OldNode.NodeInfo = new List<string[]>();
+            removekeep.OldNode.NodeInfo.Add(new string[] { null, "class", "LW_CollapsibleArea_TitleAhref" });
+            removekeep.OldNode.NodeInfo.Add(new string[] { null, "class", "LW_CollapsibleArea_Title" });
+            removekeep.OldNode.NodeInfo.Add(new string[] { null, "class", "codeSnippetContainerCodeContainer" });
+            removekeep.OldNode.NodeInfo.Add(new string[] { null, "class", "codeSnippetContainer" });
+            removekeep.OldNode.NodeInfo.Add(new string[] { null, "class", "codeSnippetContainerCode" });
+            removekeep.OldNode.NodeInfo.Add(new string[] { null, "class", "sectionblock" });
+            removekeep.OldNode.NodeInfo.Add(new string[] { null, "class", "introduction" });
+            //removekeep.OldNode.NodeInfo.Add(new string[] { null, "class", "section" });
+            removekeep.OldNode.NodeInfo.Add(new string[] { "div", "", null });
+            removekeep.OldNode.NodeInfo.Add(new string[] { null, "class", "sentence" });
+            param.Add(removekeep);
+
+
+
+
+            List<object[]> DelParam = new List<object[]>();
+
+            DelParam.Add(new object[] { null, "class", "LW_CollapsibleArea_TitleAhref", true });
+            DelParam.Add(new object[] { null, "class", "LW_CollapsibleArea_Title", true });
+            DelParam.Add(new object[] { null, "class", "codeSnippetContainerCodeContainer", true });
+            DelParam.Add(new object[] { null, "class", "codeSnippetContainer", true });
+            DelParam.Add(new object[] { null, "class", "codeSnippetContainerCode", true });           
+            DelParam.Add(new object[] { null, "class", "sectionblock", true });
+            DelParam.Add(new object[] { "span", "class", "sentence", true });
+            DelParam.Add(new object[] { "div", "class", "introduction", true });
+            DelParam.Add(new object[] { "div", "class", "section", true });
+
+
+            DelParam.Add(new object[] { "div", "", null, true });
+            //DelParam.Add(new object[] { "sentencetext", null, null, true });
+
+            //DelByAttribtes(mainBody.DocumentNode, DelParam);
+
+            HtmlNode[] childlist = mainBody.DocumentNode.Descendants().ToArray();
+
+            foreach (var item in childlist)
+            {
+                if (param.Count>0)
+                {
+                    foreach (var paramitem in param)
+                    {
+                        capture.CaptureFun(item, paramitem);
+
+                    }
+                }
+
+            }
+            string result = mainBody.DocumentNode.OuterHtml;
                 
                 return result;
 
         }
+
+
+
 
         public bool IsOverlap(HtmlNode node)
         {
@@ -102,38 +162,89 @@ namespace CaptureMSDN
 
         public void DelByAttribtes(HtmlNode htmlnode, List<object[]> Parameters)
         {
-            HtmlNode[] childlist = htmlnode.Descendants().ToArray();
-
             if (Parameters.Count>0)
             {
                 foreach (var item in Parameters)
                 {
-                    foreach (var nodeitem in childlist)
+                    if (item[0]==null)
                     {
-                        if (nodeitem.Attributes.Contains(item[0].ToString()))
+                        item[0] = "all";
+                    }
+                    HtmlNode[] childlist = (item[0].ToString()!="all")?htmlnode.Descendants(item[0].ToString()).ToArray(): htmlnode.Descendants().ToArray();
+                    if (childlist.Length>0)
+                    {
+
+                        foreach (var nodeitem in childlist)
                         {
-                            if (nodeitem.GetAttributeValue(item[0].ToString(), "") == item[1].ToString())
+                            
+                            if (item[1]==null&&nodeitem.Name==item[0].ToString())
                             {
-                                Debug.Write(item[2]);
-                                if (Convert.ToBoolean(item[2]))
+
+                                if (Convert.ToBoolean(item[3]))
                                 {
                                     nodeitem.ParentNode.RemoveChild(nodeitem, true);
-
                                 }
                                 else
                                 {
                                     nodeitem.Remove();
+                                }
+                            }
+                            else if (item[1].ToString() == "" && nodeitem.Name == item[0].ToString()&&nodeitem.Attributes.Count==0)
+                            {
+                                if (Convert.ToBoolean(item[3]))
+                                {
+                                    nodeitem.ParentNode.RemoveChild(nodeitem, true);
+                                }
+                                else
+                                {
+                                    nodeitem.Remove();
+                                }
 
+                            }
+                            else if (nodeitem.Attributes.Contains(item[1].ToString()))
+                            {
+                                if (item[2]==null)
+                                {
+                                    item[2] = "";
+                                }
+                                if (nodeitem.GetAttributeValue(item[1].ToString(), "") == item[2].ToString())
+                                {
+                                    //Debug.Write(item[3]);
+                                    if (Convert.ToBoolean(item[3]))
+                                    {
+                                        nodeitem.ParentNode.RemoveChild(nodeitem, true);
+                                    }
+                                    else
+                                    {
+                                        nodeitem.Remove();
+                                    }
                                 }
                             }
 
                         }
-
                     }
                 }
-
-
             }
         }
+
+        public void AddParentNode(HtmlNode node,string name, IDictionary<string, object> attributes)
+        {
+            string newnodestr = "<" + name + "{0}>{1}</" + name + ">";
+            string nodeInner = node.OuterHtml;
+            if (attributes.Count>0)
+            {
+                StringBuilder data = new StringBuilder(string.Empty);
+                foreach (var item in attributes)
+                {
+                    data.AppendFormat(" {0}=\"{1}\"", item.Key,item.Value);
+                }
+            }
+
+
+            HtmlNode newnode = HtmlNode.CreateNode("");
+            node.ParentNode.ReplaceChild(newnode, node);
+        }
+
+
     }
 }
