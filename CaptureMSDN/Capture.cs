@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
@@ -13,6 +14,7 @@ namespace CaptureMSDN
     {
 
         CaptureProvider capture = new CaptureProvider();
+        Options options = new Options();
 
         public void WebCapture(string url,string filepath)
         {
@@ -51,9 +53,6 @@ namespace CaptureMSDN
                 WebClient myWebClient = new WebClient();
                 byte[] myDataBuffer = myWebClient.DownloadData(url);
                 string ContentHtml = Encoding.UTF8.GetString(myDataBuffer);
-                //HtmlDocument doc = new HtmlDocument();
-                //doc.LoadHtml(ContentHtml);
-               // HtmlNode MainBody = doc.GetElementbyId(id);
                 return ContentHtml;
 
             }
@@ -63,7 +62,16 @@ namespace CaptureMSDN
                 throw;
             }
         }
-        public string WebCapturesStr(string html,CaptureParameter param)
+        public string CapturesTitle(string html)
+        {
+
+            HtmlDocument doc = new HtmlDocument();
+            doc.LoadHtml(html);
+            HtmlNode Title = doc.DocumentNode.SelectSingleNode("//title");
+            return Title.InnerHtml;
+
+        }
+        public string CapturesBody(string html,CaptureParameter param)
         {
 
             HtmlNode MainBody;
@@ -100,17 +108,25 @@ namespace CaptureMSDN
                     }
                 }
             }
-
-            string result = mainBody.DocumentNode.OuterHtml;
+            if (MainBody.FirstChild.OuterHtml== " ")
+            {
+                MainBody.FirstChild.Remove();
+            }
+            string result = mainBody.DocumentNode.InnerHtml;
                 
                 return result;
 
         }
 
+
+        public string OutHtml(string url)
+        {
+            string temple = (File.Exists(Path.Combine(Environment.CurrentDirectory, options.TemplateFileName))) ? File.ReadAllText(Path.Combine(Environment.CurrentDirectory, options.TemplateFileName)) : options.TemplateHtml;
+            string outHtml = string.Format(temple, CapturesTitle(MainCapturesById(url)), CapturesBody(MainCapturesById(url), getpara()));
+            return outHtml;
+        }
         public CaptureParameter getpara()
         {
-
-
 
             CaptureParameter param = new CaptureParameter();
             param.Nodeoperate = new List<NodeOperate>() ;
@@ -125,33 +141,46 @@ namespace CaptureMSDN
             NodeOperate removekeep = new NodeOperate();
             param.Nodeoperate.Add(removekeep);
 
+            NodeOperate addchildren = new NodeOperate();
+            param.Nodeoperate.Add(addchildren);
+
+
             removeall.method = MethodEnum.RemoveAll;
-            removeall.parameterlist = new List<IList<string>>();
-            removeall.parameterlist.Add(new List<string> { null, "class", "codeSnippetToolBar" });
-            removeall.parameterlist.Add(new List<string> { null, "class", "codeSnippetContainerTabs" });
-            removeall.parameterlist.Add(new List<string> { null, "class", "LW_CollapsibleArea_Anchor_Div" });
-            removeall.parameterlist.Add(new List<string> { null, "class", "LW_CollapsibleArea_HrDiv" });
-            removeall.parameterlist.Add(new List<string> { null, "class", "cl_CollapsibleArea_expanding LW_CollapsibleArea_Img" });
-
-
-
             removekeep.method = MethodEnum.Remove;
-            removekeep.parameterlist = new List<IList<string>>();
-            removekeep.parameterlist.Add(new List<string> { null, "class", "LW_CollapsibleArea_TitleAhref" });
-            removekeep.parameterlist.Add(new List<string> { null, "class", "LW_CollapsibleArea_Title" });
-            removekeep.parameterlist.Add(new List<string> { null, "class", "codeSnippetContainerCodeContainer" });
-            removekeep.parameterlist.Add(new List<string> { null, "class", "codeSnippetContainer" });
-            removekeep.parameterlist.Add(new List<string> { null, "class", "codeSnippetContainerCode" });
-            removekeep.parameterlist.Add(new List<string> { null, "class", "sectionblock" });
-            removekeep.parameterlist.Add(new List<string> { null, "class", "introduction" });
-            removekeep.parameterlist.Add(new List<string> { "div", "class", "section" });
-            removekeep.parameterlist.Add(new List<string> { "div", "", null });
-            removekeep.parameterlist.Add(new List<string> { "span", "class", "sentence" });
-            removekeep.parameterlist.Add(new List<string> { "sentencetext", null, "sentence" });
+            addchildren.method = MethodEnum.AddChildren;
+
+
+
+            removeall.parameterlist = new List<parameterlist>(new parameterlist[] {
+                new parameterlist() {parameter = new List<string>{ null, "class", "codeSnippetToolBar|codeSnippetContainerTabs" }},
+                //new parameterlist() {parameter = new List<string>{ null, "class", "codeSnippetContainerTabs" }},
+                new parameterlist() {parameter = new List<string>{ null, "class", "LW_CollapsibleArea_Anchor_Div" }},
+                new parameterlist() {parameter = new List<string>{ null, "class", "LW_CollapsibleArea_HrDiv" }},
+                new parameterlist() {parameter = new List<string>{ null, "class", "cl_CollapsibleArea_expanding" }}
+            });
+
+            removekeep.parameterlist = new List<parameterlist>(new parameterlist[] {
+                //new parameterlist() {parameter = new List<string>{ null, "class", "LW_CollapsibleArea_TitleAhref" }},
+                //new parameterlist() {parameter = new List<string>{ null, "class", "LW_CollapsibleArea_Title" } },
+                //new parameterlist() {parameter = new List<string>{ null, "class", "codeSnippetContainerCodeContainer" } },
+                //new parameterlist() {parameter = new List<string>{ null, "class", "codeSnippetContainer" } },
+                //new parameterlist() {parameter = new List<string>{ null, "class", "codeSnippetContainerCode" } },
+                //new parameterlist() {parameter = new List<string>{ null, "class", "sectionblock" } },
+                //new parameterlist() {parameter = new List<string>{ null, "class", "introduction" } },
+                //new parameterlist() {parameter = new List<string>{ "div", "class", "section" } },
+                new parameterlist() {parameter = new List<string>{ "div", null, null } },
+                new parameterlist() {parameter = new List<string>{ "span", "class", "sentence" } },
+                new parameterlist() {parameter = new List<string>{ "sentencetext", null, "sentence" } }
+            });
+
+            addchildren.parameterlist = new List<parameterlist>(new parameterlist[] {
+                new parameterlist() {parameter = new List<string>{ "pre", null, null,"code","class","code" }}
+            });
 
             return param;
 
         }
 
     }
+
 }

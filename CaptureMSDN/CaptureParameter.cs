@@ -14,22 +14,25 @@ namespace CaptureMSDN
     }
 
 
+    //public class NodeOperate
+    //{
+    //    public MethodEnum method { get; set; }
+    //    public IList<IList<string>> parameterlist { get; set; }
+
+    //}
+
     public class NodeOperate
     {
         public MethodEnum method { get; set; }
-        public IList<IList<string>> parameterlist { get; set; }
+        public List<parameterlist> parameterlist { get; set; } = null;
 
     }
 
-    public class NodeO
-    {
-        public IList<ppp> list { get; set; }
 
-    }
-
-    public class ppp
+    public class parameterlist
     {
-        public string[] a;
+        public List<string> parameter { get; set; }
+
     }
 
 
@@ -37,18 +40,13 @@ namespace CaptureMSDN
     public enum MethodEnum
     {
         Remove,
-
         RemoveAll,
         Replace,
         AddParent,
-
         AddChildren,
-
         DelAttribute,
-
         ReplaceAttribute,
-
-
+        AddAttribute
     }
 
     public enum GetMainMethodEnum

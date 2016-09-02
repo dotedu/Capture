@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -19,8 +20,10 @@ namespace CaptureMSDN
         Capture capture = new Capture();
         private void button1_Click(object sender, EventArgs e)
         {
-            string url = "https://msdn.microsoft.com/zh-cn/library/3tz250sf.aspx";
-            textBox1.Text = capture.WebCapturesStr(capture.MainCapturesById(url), capture.getpara());
+
+            string url = "https://msdn.microsoft.com/zh-cn/library/0b0thckt.aspx";
+            System.Diagnostics.Debug.Write(capture.CapturesTitle(capture.MainCapturesById(url)));
+            textBox1.Text = capture.OutHtml(url);
         }
 
         private void textBox1_KeyDown(object sender, KeyEventArgs e)
