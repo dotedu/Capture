@@ -35,6 +35,11 @@ namespace CaptureMSDN
                         break;
                     Replace(node, Operate.parameterlist);
                     break;
+                case MethodEnum.DelAttribute:
+                    if (Operate.parameterlist == null)
+                        break;
+                    DelAttribute(node, Operate.parameterlist);
+                    break;
                 default:
                     break;
             }
@@ -215,6 +220,7 @@ namespace CaptureMSDN
                                     }
 
                                 }
+                                node.AddNodeBetwenChild(item.parameter[3], item.parameter[4], item.parameter[5]);
 
                             }
                             else
@@ -245,7 +251,61 @@ namespace CaptureMSDN
         }
         private void DelAttribute(HtmlNode node, IList<parameterlist> parameterlist)
         {
+            if (parameterlist != null && parameterlist.Count > 0)
+            {
+                foreach (var item in parameterlist)
+                {
+                    if (string.IsNullOrEmpty(item.parameter[2]))
+                    {
+                        item.parameter[2] = "";
+                    }
 
+                    if (!string.IsNullOrEmpty(item.parameter[0]) && item.parameter[1] != null)
+                    {
+                        if (node.Name == item.parameter[0])
+                        {
+                            if (item.parameter[1] == "" && node.Name == item.parameter[0])
+                            {
+                                node.Attributes.RemoveAll();
+                            }
+                            else
+                            {
+                                if (item.parameter[2].Contains('&'))
+                                {
+                                    string[] values = item.parameter[2].Split('&');
+                                    foreach (var value in values)
+                                    {
+                                        if (!node.IsExistAttributeValues(item.parameter[1], value))
+                                        {
+                                            return;
+
+                                        }
+
+                                    }
+                                    node.Attributes.Remove(item.parameter[1]);
+
+                                }
+                                else
+                                {
+                                    string[] values = item.parameter[2].Split('|');
+                                    foreach (var value in values)
+                                    {
+                                        if (!node.IsExistAttributeValues(item.parameter[1], value))
+                                        {
+                                            node.Attributes.Remove(item.parameter[1]);
+                                        }
+
+                                    }
+
+                                }
+
+
+                            }
+                        }
+
+                    }
+                }
+            }
         }
 
         private void AddAttribute(HtmlNode node, IList<parameterlist> parameterlist)

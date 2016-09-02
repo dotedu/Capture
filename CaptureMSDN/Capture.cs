@@ -140,14 +140,18 @@ namespace CaptureMSDN
 
             NodeOperate removekeep = new NodeOperate();
             param.Nodeoperate.Add(removekeep);
+            NodeOperate delattribute = new NodeOperate();
 
             NodeOperate addchildren = new NodeOperate();
+            param.Nodeoperate.Add(delattribute);
+
             param.Nodeoperate.Add(addchildren);
 
 
             removeall.method = MethodEnum.RemoveAll;
             removekeep.method = MethodEnum.Remove;
             addchildren.method = MethodEnum.AddChildren;
+            delattribute.method = MethodEnum.DelAttribute;
 
 
 
@@ -160,23 +164,28 @@ namespace CaptureMSDN
             });
 
             removekeep.parameterlist = new List<parameterlist>(new parameterlist[] {
-                //new parameterlist() {parameter = new List<string>{ null, "class", "LW_CollapsibleArea_TitleAhref" }},
-                //new parameterlist() {parameter = new List<string>{ null, "class", "LW_CollapsibleArea_Title" } },
-                //new parameterlist() {parameter = new List<string>{ null, "class", "codeSnippetContainerCodeContainer" } },
-                //new parameterlist() {parameter = new List<string>{ null, "class", "codeSnippetContainer" } },
-                //new parameterlist() {parameter = new List<string>{ null, "class", "codeSnippetContainerCode" } },
-                //new parameterlist() {parameter = new List<string>{ null, "class", "sectionblock" } },
-                //new parameterlist() {parameter = new List<string>{ null, "class", "introduction" } },
-                //new parameterlist() {parameter = new List<string>{ "div", "class", "section" } },
+                new parameterlist() {parameter = new List<string>{ null, "class", "LW_CollapsibleArea_TitleAhref" }},
+                new parameterlist() {parameter = new List<string>{ null, "class", "LW_CollapsibleArea_Title" } },
+                new parameterlist() {parameter = new List<string>{ null, "class", "codeSnippetContainerCodeContainer" } },
+                new parameterlist() {parameter = new List<string>{ null, "class", "codeSnippetContainer" } },
+                new parameterlist() {parameter = new List<string>{ null, "class", "codeSnippetContainerCode" } },
+                new parameterlist() {parameter = new List<string>{ null, "class", "sectionblock" } },
+                new parameterlist() {parameter = new List<string>{ null, "class", "introduction" } },
+                new parameterlist() {parameter = new List<string>{ "div", "class", "section" } },
                 new parameterlist() {parameter = new List<string>{ "div", null, null } },
                 new parameterlist() {parameter = new List<string>{ "span", "class", "sentence" } },
                 new parameterlist() {parameter = new List<string>{ "sentencetext", null, "sentence" } }
             });
 
+            delattribute.parameterlist = new List<parameterlist>(new parameterlist[] {
+                new parameterlist() {parameter = new List<string>{ "strong", "xmlns", null,} },
+                new parameterlist() {parameter = new List<string>{ "span", "xmlns", null,} }
+            });
+
             addchildren.parameterlist = new List<parameterlist>(new parameterlist[] {
                 new parameterlist() {parameter = new List<string>{ "pre", null, null,"code","class","code" }}
             });
-
+            
             return param;
 
         }
