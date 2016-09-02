@@ -10,22 +10,28 @@ namespace CaptureMSDN
     {
         public GetMainMethodEnum GetMainMethod { get; set; }
         public string GetMainString { get; set; }
-        public IList<NodeOperate> nodeOperate { get; set; }
+        public IList<NodeOperate> Nodeoperate { get; set; }
     }
 
 
     public class NodeOperate
     {
         public MethodEnum method { get; set; }
-        public IList<ParameterList> parameterlist { get; set; }
+        public IList<IList<string>> parameterlist { get; set; }
 
     }
 
-    public class ParameterList
+    public class NodeO
     {
-        public IList<string> parameter { get; set; }
+        public IList<ppp> list { get; set; }
 
     }
+
+    public class ppp
+    {
+        public string[] a;
+    }
+
 
 
     public enum MethodEnum

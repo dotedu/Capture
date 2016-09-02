@@ -17,10 +17,10 @@ namespace CaptureMSDN
             switch (Operate.method)
             {
                 case MethodEnum.RemoveAll:
-                        RemoveAll(node, Operate.parameter);
+                        RemoveAll(node, Operate.parameterlist);
                     break;
                 case MethodEnum.Remove:
-                        RemoveKeep(node, Operate.parameter);
+                        RemoveKeep(node, Operate.parameterlist);
                     break;
                 case MethodEnum.Replace:
                     //Console.WriteLine("您通过了");
@@ -31,24 +31,24 @@ namespace CaptureMSDN
 
         }
 
-        private void RemoveAll(HtmlNode node, IList<List<string>> parameter)
+        private void RemoveAll(HtmlNode node, IList<IList<string>> parameter)
         {
-            Remove(node, NodeInfo, false);
+            Remove(node, parameter, false);
         }
 
-        private void RemoveKeep(HtmlNode node, IList<List<string>> parameter)
+        private void RemoveKeep(HtmlNode node, IList<IList<string>> parameter)
         {
-            Remove(node, NodeInfo, true);
+            Remove(node, parameter, true);
         }
 
 
-        private void Remove(HtmlNode node, IList<List<string>> OldNode, bool keepGrandChildren)
+        private void Remove(HtmlNode node, IList<IList<string>> parameterlist, bool keepGrandChildren)
         {
-            if (NodeInfo == null)
+            if (parameterlist == null)
                 return;
-            if (NodeInfo != null && NodeInfo.Count > 0)
+            if (parameterlist != null && parameterlist.Count > 0)
             {
-                foreach (var item in NodeInfo)
+                foreach (var item in parameterlist)
                 {
                     if (!string.IsNullOrEmpty(item[0]) && string.IsNullOrEmpty(item[1]))
                     {

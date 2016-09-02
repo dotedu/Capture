@@ -44,17 +44,17 @@ namespace CaptureMSDN
             }
         }
 
-        public string MainCapturesById(string url,string id)
+        public string MainCapturesById(string url)
         {
             try
             {
                 WebClient myWebClient = new WebClient();
                 byte[] myDataBuffer = myWebClient.DownloadData(url);
                 string ContentHtml = Encoding.UTF8.GetString(myDataBuffer);
-                HtmlDocument doc = new HtmlDocument();
-                doc.LoadHtml(ContentHtml);
-                HtmlNode MainBody = doc.GetElementbyId(id);
-                return MainBody.OuterHtml;
+                //HtmlDocument doc = new HtmlDocument();
+                //doc.LoadHtml(ContentHtml);
+               // HtmlNode MainBody = doc.GetElementbyId(id);
+                return ContentHtml;
 
             }
             catch (Exception)
@@ -63,11 +63,26 @@ namespace CaptureMSDN
                 throw;
             }
         }
-        public string WebCapturesStr(string url, string id, CaptureParameter param)
+        public string WebCapturesStr(string html,CaptureParameter param)
         {
 
-                HtmlDocument mainBody = new HtmlDocument();
-                mainBody.LoadHtml(MainCapturesById(url,id));
+            HtmlNode MainBody;
+            HtmlDocument doc = new HtmlDocument();
+            doc.LoadHtml(html);
+            
+            if (param.GetMainMethod== GetMainMethodEnum.Id)
+            {
+                MainBody = doc.GetElementbyId(param.GetMainString);
+            }
+            else
+            {
+                MainBody = doc.DocumentNode.SelectSingleNode(param.GetMainString);
+
+            }
+
+
+            HtmlDocument mainBody = new HtmlDocument();
+            mainBody.LoadHtml(MainBody.OuterHtml);
 
 
 
@@ -76,9 +91,9 @@ namespace CaptureMSDN
 
             foreach (var item in childlist)
             {
-                if (param.nodeOperate.Count>0)
+                if (param.Nodeoperate.Count>0)
                 {
-                    foreach (var paramitem in param.nodeOperate)
+                    foreach (var paramitem in param.Nodeoperate)
                     {
                         capture.CaptureFun(item, paramitem);
 
@@ -98,46 +113,41 @@ namespace CaptureMSDN
 
 
             CaptureParameter param = new CaptureParameter();
-            NodeOperate removeall = new NodeOperate();
-            removeall.method = MethodEnum.RemoveAll;
-            param.nodeOperate = new List<NodeOperate>();
+            param.Nodeoperate = new List<NodeOperate>() ;
 
             param.GetMainMethod = GetMainMethodEnum.Id;
             param.GetMainString = "mainBody";
 
-            removeall.parameterlist = new List<ParameterList>();
-            //list1.parameter.Add
-            ParameterList lis1 = new ParameterList(new List<string> { null, "class", "codeSnippetContainerTabs" }) ;
 
-            //参数是一个必须可能跌代的对象,也可是数组  
-            //list.AddRange(new Person[] { new Person("aladdin", 20), new Person("zhao", 6) });
-
-
-            //构造传入批量参数 ,与AddRange效果一样
-            //List<Person> mylist = new List<Person>(new Person[] { new Person("aladdin", 20), new Person("zhao", 6) });
-            list1.Add(new List<string> { null, "class", "codeSnippetToolBar" });
-            removeall.parameterlist.Add(new ParameterList[] { null, "class", "codeSnippetContainerTabs" });
-            removeall.parameter.Add(new List<string> { null, "class", "LW_CollapsibleArea_Anchor_Div" });
-            removeall.parameter.Add(new List<string> { null, "class", "LW_CollapsibleArea_HrDiv" });
-            removeall.parameter.Add(new List<string> { null, "class", "cl_CollapsibleArea_expanding LW_CollapsibleArea_Img" });
-
-            removeall.parameterlist.Add(list1);
-            param.nodeOperate.Add(removeall);
+            NodeOperate removeall = new NodeOperate();
+            param.Nodeoperate.Add(removeall);
 
             NodeOperate removekeep = new NodeOperate();
+            param.Nodeoperate.Add(removekeep);
+
+            removeall.method = MethodEnum.RemoveAll;
+            removeall.parameterlist = new List<IList<string>>();
+            removeall.parameterlist.Add(new List<string> { null, "class", "codeSnippetToolBar" });
+            removeall.parameterlist.Add(new List<string> { null, "class", "codeSnippetContainerTabs" });
+            removeall.parameterlist.Add(new List<string> { null, "class", "LW_CollapsibleArea_Anchor_Div" });
+            removeall.parameterlist.Add(new List<string> { null, "class", "LW_CollapsibleArea_HrDiv" });
+            removeall.parameterlist.Add(new List<string> { null, "class", "cl_CollapsibleArea_expanding LW_CollapsibleArea_Img" });
+
+
+
             removekeep.method = MethodEnum.Remove;
-            removekeep.parameter.Add(new List<string> { null, "class", "LW_CollapsibleArea_TitleAhref" });
-            removekeep.parameter.Add(new List<string> { null, "class", "LW_CollapsibleArea_Title" });
-            removekeep.parameter.Add(new List<string> { null, "class", "codeSnippetContainerCodeContainer" });
-            removekeep.parameter.Add(new List<string> { null, "class", "codeSnippetContainer" });
-            removekeep.parameter.Add(new List<string> { null, "class", "codeSnippetContainerCode" });
-            removekeep.parameter.Add(new List<string> { null, "class", "sectionblock" });
-            removekeep.parameter.Add(new List<string> { null, "class", "introduction" });
-            removekeep.parameter.Add(new List<string> { "div", "class", "section" });
-            removekeep.parameter.Add(new List<string> { "div", "", null });
-            removekeep.parameter.Add(new List<string> { "span", "class", "sentence" });
-            removekeep.parameter.Add(new List<string> { "sentencetext", null, "sentence" });
-            param.nodeOperate.Add(removekeep);
+            removekeep.parameterlist = new List<IList<string>>();
+            removekeep.parameterlist.Add(new List<string> { null, "class", "LW_CollapsibleArea_TitleAhref" });
+            removekeep.parameterlist.Add(new List<string> { null, "class", "LW_CollapsibleArea_Title" });
+            removekeep.parameterlist.Add(new List<string> { null, "class", "codeSnippetContainerCodeContainer" });
+            removekeep.parameterlist.Add(new List<string> { null, "class", "codeSnippetContainer" });
+            removekeep.parameterlist.Add(new List<string> { null, "class", "codeSnippetContainerCode" });
+            removekeep.parameterlist.Add(new List<string> { null, "class", "sectionblock" });
+            removekeep.parameterlist.Add(new List<string> { null, "class", "introduction" });
+            removekeep.parameterlist.Add(new List<string> { "div", "class", "section" });
+            removekeep.parameterlist.Add(new List<string> { "div", "", null });
+            removekeep.parameterlist.Add(new List<string> { "span", "class", "sentence" });
+            removekeep.parameterlist.Add(new List<string> { "sentencetext", null, "sentence" });
 
             return param;
 
