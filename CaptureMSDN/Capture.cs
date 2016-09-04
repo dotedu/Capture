@@ -6,79 +6,89 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace CaptureMSDN
 {
     class Capture
     {
-
         CaptureProvider capture = new CaptureProvider();
-        Options options = new Options();
 
-        public void WebCapture(string url,string filepath)
+
+
+        public void OutHtmlToFlie(string url, string filepath)
         {
+            string contenthtml = HttpClient(url);
+            CaptureParameter param = getpara();
+            if (contenthtml == null)
+                return;
+
+            string SaveName = Path.GetFileNameWithoutExtension(url) + "." + MainForm.options.SaveExtension;
             try
             {
-                WebClient myWebClient = new WebClient();
-                byte[] myDataBuffer = myWebClient.DownloadData(url);
-                string ContentHtml = Encoding.UTF8.GetString(myDataBuffer);
-
-                HtmlDocument doc = new HtmlDocument();
-                doc.LoadHtml(ContentHtml);
-                HtmlNode MainBody = doc.GetElementbyId("mainBody");
-                HtmlDocument mainBody = new HtmlDocument();
-                mainBody.LoadHtml(MainBody.OuterHtml);
-                //*[@id="mainBody"]/text()
-                IEnumerable<HtmlNode> childlist = MainBody.Descendants();
-                foreach (HtmlNode child_1 in childlist)
+                while (MainForm.threadSwitch)
                 {
-                    if (child_1.InnerHtml==null)
-                    {
-                        child_1.RemoveAll();
-                    }
+                    Thread.Sleep(1);
+
                 }
-            }
-            catch (Exception)
-            {
 
-                throw;
-            }
-        }
-
-        public string MainCapturesById(string url)
-        {
-            try
-            {
-                WebClient myWebClient = new WebClient();
-                byte[] myDataBuffer = myWebClient.DownloadData(url);
-                string ContentHtml = Encoding.UTF8.GetString(myDataBuffer);
-                return ContentHtml;
+                File.WriteAllText(Path.Combine(filepath, SaveName),
+                    OutHtml(CapturesBody(contenthtml, param)));
+                MainForm.Sucess++;
+              MainForm.OnDownLoadSucess?.Invoke(url); 
 
             }
             catch (Exception)
             {
-
                 throw;
             }
         }
-        public string CapturesTitle(string html)
+
+        public string HttpClient(string url)
         {
+            string ContentHtml;
+            int reconect = 0;
+            do
+            {
+                try
+                {
+                    while (MainForm.threadSwitch)
+                    {
+                        Thread.Sleep(1);
+                    }
 
-            HtmlDocument doc = new HtmlDocument();
-            doc.LoadHtml(html);
-            HtmlNode Title = doc.DocumentNode.SelectSingleNode("//title");
-            return Title.InnerHtml;
 
+                    WebClient myWebClient = new WebClient();
+                    byte[] myDataBuffer = myWebClient.DownloadData(url);
+                    ContentHtml = Encoding.UTF8.GetString(myDataBuffer);
+
+                }
+                catch (Exception)
+                {
+                    reconect++;
+                    MainForm.DownLoadFail?.Invoke(url, reconect);
+
+                    ContentHtml = null;
+                }
+
+            } while (ContentHtml == null && reconect <= MainForm.options.MaxReconnect);
+
+            return ContentHtml;
         }
-        public string CapturesBody(string html,CaptureParameter param)
+
+
+        public string[] CapturesBody(string html, CaptureParameter param)
         {
 
             HtmlNode MainBody;
             HtmlDocument doc = new HtmlDocument();
+
+
             doc.LoadHtml(html);
-            
-            if (param.GetMainMethod== GetMainMethodEnum.Id)
+            HtmlNode Title = doc.DocumentNode.SelectSingleNode("//title");
+
+            if (param.GetMainMethod == GetMainMethodEnum.Id)
             {
                 MainBody = doc.GetElementbyId(param.GetMainString);
             }
@@ -88,18 +98,49 @@ namespace CaptureMSDN
 
             }
 
-
             HtmlDocument mainBody = new HtmlDocument();
             mainBody.LoadHtml(MainBody.OuterHtml);
-
-
-
 
             HtmlNode[] childlist = mainBody.DocumentNode.Descendants().ToArray();
 
             foreach (var item in childlist)
             {
-                if (param.Nodeoperate.Count>0)
+                if (MainForm.options.SaveImage)
+                {
+                    if (item.Name == "img" && item.Attributes.Contains("src"))
+                    {
+                        if (!string.IsNullOrEmpty(item.Attributes["src"].Value))
+                        {
+
+                            string imgsavename = Path.GetFileName(item.Attributes["src"].Value);
+                            if (!Directory.Exists(MainForm.options.SavePath + "\\images\\"))//如果不存在就创建file文件夹　　             　　                
+                                Directory.CreateDirectory(MainForm.options.SavePath + "\\images\\");//创建该文件夹　
+
+                            int reconect = 0;
+                            bool imgIsSave = false;
+                            do
+                            {
+                                try
+                                {
+                                    DownloadImage(item,item.Attributes["src"].Value);
+                                    imgIsSave = true;
+                                }
+                                catch (Exception)
+                                {
+                                    reconect++;
+                                    MainForm.DownLoadFail?.Invoke(item.Attributes["src"].Value, reconect);
+                                }
+
+                            } while (!imgIsSave && reconect < MainForm.options.MaxReconnect);
+
+                        }
+                    }
+
+
+                }
+
+
+                if (param.Nodeoperate.Count > 0)
                 {
                     foreach (var paramitem in param.Nodeoperate)
                     {
@@ -108,28 +149,109 @@ namespace CaptureMSDN
                     }
                 }
             }
-            if (MainBody.FirstChild.OuterHtml== " ")
+            if (MainBody.FirstChild.OuterHtml == " ")
             {
                 MainBody.FirstChild.Remove();
             }
+
             string result = mainBody.DocumentNode.InnerHtml;
-                
-                return result;
+            return new string[] { Title.InnerHtml, result };
+
 
         }
 
-
-        public string OutHtml(string url)
+        /// <summary>
+        /// 下载文件
+        /// </summary>
+        /// <param name="URL">下载文件地址</param>
+        /// <param name="Filename">下载后的存放地址</param>
+        public void DownloadImage(HtmlNode node, string URL)
         {
-            string temple = (File.Exists(Path.Combine(Environment.CurrentDirectory, options.TemplateFileName))) ? File.ReadAllText(Path.Combine(Environment.CurrentDirectory, options.TemplateFileName)) : options.TemplateHtml;
-            string outHtml = string.Format(temple, CapturesTitle(MainCapturesById(url)), CapturesBody(MainCapturesById(url), getpara()));
+            string filename;
+            try
+            {
+                HttpWebRequest Myrq = (HttpWebRequest)HttpWebRequest.Create(URL);
+                HttpWebResponse myrp = (HttpWebResponse)Myrq.GetResponse();
+                long totalBytes = myrp.ContentLength;
+
+                Stream st = myrp.GetResponseStream();
+                BinaryReader br = new BinaryReader(st);
+                string fileType = string.Empty; ;
+                FileExtension extension;
+
+                try
+                {
+                    byte data = br.ReadByte();
+                    fileType += data.ToString();
+                    data = br.ReadByte();
+                    fileType += data.ToString();
+                    try
+                    {
+                        extension = (FileExtension)Enum.Parse(typeof(FileExtension), fileType);
+                    }
+                    catch
+                    {
+
+                        extension = FileExtension.VALIDFILE;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    throw ex;
+                }
+                filename = Path.GetFileNameWithoutExtension(URL) + "."+extension.ToString();
+                if (File.Exists(MainForm.options.SavePath + "\\images\\" + filename))
+                    return;
+
+                Stream so = new FileStream(MainForm.options.SavePath+ "\\images\\" + filename, FileMode.Create);
+                long totalDownloadedByte = 0;
+                byte[] by = new byte[1024];
+                int osize = st.Read(by, 0, (int)by.Length);
+                while (osize > 0)
+                {
+                    totalDownloadedByte = osize + totalDownloadedByte;
+                    System.Windows.Forms.Application.DoEvents();
+                    so.Write(by, 0, osize);
+
+                    osize = st.Read(by, 0, (int)by.Length);
+                }
+                so.Close();
+                st.Close();
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+            node.Attributes.Remove("src");
+            node.SetAttributeValue("src", "\\images\\" + filename);
+        }
+        public enum FileExtension
+        {
+            jpg = 255216,
+            gif = 7173,
+            png = 13780,
+            swf = 6787,
+            rar = 8297,
+            zip = 8075,
+            _7z = 55122,
+            VALIDFILE = 9999999
+        }
+
+        public string OutHtml(string[] Captures)
+        {
+
+            string temple = (File.Exists(MainForm.options.TemplateFileName)) ? File.ReadAllText(MainForm.options.TemplateFileName
+                ) : MainForm.options.TemplateHtml;
+            string outHtml = string.Format(temple, Captures[0], Captures[1]);
             return outHtml;
         }
+
+
         public CaptureParameter getpara()
         {
 
             CaptureParameter param = new CaptureParameter();
-            param.Nodeoperate = new List<NodeOperate>() ;
+            param.Nodeoperate = new List<NodeOperate>();
 
             param.GetMainMethod = GetMainMethodEnum.Id;
             param.GetMainString = "mainBody";
@@ -185,7 +307,7 @@ namespace CaptureMSDN
             addchildren.parameterlist = new List<parameterlist>(new parameterlist[] {
                 new parameterlist() {parameter = new List<string>{ "pre", null, null,"code","class","code" }}
             });
-            
+
             return param;
 
         }
