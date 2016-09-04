@@ -116,23 +116,13 @@ namespace CaptureMSDN
                             if (!Directory.Exists(MainForm.options.SavePath + "\\images\\"))//如果不存在就创建file文件夹　　             　　                
                                 Directory.CreateDirectory(MainForm.options.SavePath + "\\images\\");//创建该文件夹　
 
-                            int reconect = 0;
-                            bool imgIsSave = false;
-                            do
-                            {
-                                try
-                                {
-                                    DownloadImage(item,item.Attributes["src"].Value);
-                                    imgIsSave = true;
-                                }
-                                catch (Exception)
-                                {
-                                    reconect++;
-                                    MainForm.DownLoadFail?.Invoke(item.Attributes["src"].Value, reconect);
-                                }
 
-                            } while (!imgIsSave && reconect < MainForm.options.MaxReconnect);
+                            Thread t = new Thread(new ParameterizedThreadStart(DownloadImage));
+                            t.IsBackground = true;
+                            t.Start(item.Attributes["src"].Value);
 
+                            item.Attributes.Remove("src");
+                            item.SetAttributeValue("src", MainForm.options.SavePath + "\\images\\"+imgsavename);
                         }
                     }
 
@@ -149,10 +139,11 @@ namespace CaptureMSDN
                     }
                 }
             }
-            if (MainBody.FirstChild.OuterHtml == " ")
+            if (MainBody.FirstChild.OuterHtml.Length<=1)
             {
                 MainBody.FirstChild.Remove();
             }
+
 
             string result = mainBody.DocumentNode.InnerHtml;
             return new string[] { Title.InnerHtml, result };
@@ -165,67 +156,92 @@ namespace CaptureMSDN
         /// </summary>
         /// <param name="URL">下载文件地址</param>
         /// <param name="Filename">下载后的存放地址</param>
-        public void DownloadImage(HtmlNode node, string URL)
+        public void DownloadImage(object url)
         {
-            string filename;
-            try
+            int reconect = 0;
+            bool imgIsSave = false;
+
+            string filename = Path.GetFileName(url.ToString());
+            lock (this)
             {
-                HttpWebRequest Myrq = (HttpWebRequest)HttpWebRequest.Create(URL);
-                HttpWebResponse myrp = (HttpWebResponse)Myrq.GetResponse();
-                long totalBytes = myrp.ContentLength;
-
-                Stream st = myrp.GetResponseStream();
-                BinaryReader br = new BinaryReader(st);
-                string fileType = string.Empty; ;
-                FileExtension extension;
-
-                try
+                do
                 {
-                    byte data = br.ReadByte();
-                    fileType += data.ToString();
-                    data = br.ReadByte();
-                    fileType += data.ToString();
                     try
                     {
-                        extension = (FileExtension)Enum.Parse(typeof(FileExtension), fileType);
+                        HttpWebRequest Myrq = (HttpWebRequest)HttpWebRequest.Create(url.ToString());
+                        HttpWebResponse myrp = (HttpWebResponse)Myrq.GetResponse();
+                        Stream st = myrp.GetResponseStream();
+
+                        Stream so = new FileStream(MainForm.options.SavePath + "\\images\\" + filename, FileMode.Create);
+                        long totalDownloadedByte = 0;
+                        byte[] by = new byte[1024];
+                        int osize = st.Read(by, 0, (int)by.Length);
+                        while (osize > 0)
+                        {
+                            totalDownloadedByte = osize + totalDownloadedByte;
+                            so.Write(by, 0, osize);
+
+
+                            osize = st.Read(by, 0, (int)by.Length);
+                        }
+                        so.Close();
+                        st.Close();
+                        reconect++;
+
+                        imgIsSave = true;
+
                     }
-                    catch
+                    catch (Exception)
                     {
-
-                        extension = FileExtension.VALIDFILE;
+                        MainForm.DownLoadFail?.Invoke(url.ToString(), reconect);
+                        //throw;
                     }
-                }
-                catch (Exception ex)
-                {
-                    throw ex;
-                }
-                filename = Path.GetFileNameWithoutExtension(URL) + "."+extension.ToString();
-                if (File.Exists(MainForm.options.SavePath + "\\images\\" + filename))
-                    return;
 
-                Stream so = new FileStream(MainForm.options.SavePath+ "\\images\\" + filename, FileMode.Create);
-                long totalDownloadedByte = 0;
-                byte[] by = new byte[1024];
-                int osize = st.Read(by, 0, (int)by.Length);
-                while (osize > 0)
-                {
-                    totalDownloadedByte = osize + totalDownloadedByte;
-                    System.Windows.Forms.Application.DoEvents();
-                    so.Write(by, 0, osize);
+                } while (!imgIsSave && reconect < MainForm.options.MaxReconnect && !File.Exists(MainForm.options.SavePath + "\\images\\" + filename));
 
-                    osize = st.Read(by, 0, (int)by.Length);
-                }
-                so.Close();
-                st.Close();
             }
-            catch (Exception)
-            {
-                throw;
-            }
-            node.Attributes.Remove("src");
-            node.SetAttributeValue("src", "\\images\\" + filename);
+
         }
-        public enum FileExtension
+
+        public static FileExtension CheckTextFile(string fileName)
+        {
+            FileStream fs = new FileStream(fileName, FileMode.Open, FileAccess.Read);
+            BinaryReader br = new BinaryReader(fs);
+            string fileType = string.Empty; ;
+
+            try
+            {
+                byte data = br.ReadByte();
+                fileType += data.ToString();
+                data = br.ReadByte();
+                fileType += data.ToString();
+                FileExtension extension;
+                try
+                {
+                    extension = (FileExtension)Enum.Parse(typeof(FileExtension), fileType);
+                }
+                catch
+                {
+
+                    extension = FileExtension.VALIDFILE;
+                }
+                return extension;
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+            finally
+            {
+                if (fs != null)
+                {
+                    fs.Close();
+                    br.Close();
+                }
+            }
+        }
+
+    public enum FileExtension
         {
             jpg = 255216,
             gif = 7173,
@@ -301,8 +317,13 @@ namespace CaptureMSDN
 
             delattribute.parameterlist = new List<parameterlist>(new parameterlist[] {
                 new parameterlist() {parameter = new List<string>{ "strong", "xmlns", null,} },
-                new parameterlist() {parameter = new List<string>{ "span", "xmlns", null,} }
-            });
+                new parameterlist() {parameter = new List<string>{ "img", "xmlns", null,} },
+                new parameterlist() {parameter = new List<string>{ "img", "id", null,} },
+                new parameterlist() {parameter = new List<string>{ "span", "xmlns", null,} },
+                new parameterlist() {parameter = new List<string>{ "h2", "class", null,} },
+                new parameterlist() {parameter = new List<string>{ "h2", "xmlns:xlink", null,} },
+                new parameterlist() {parameter = new List<string>{ "h2", "xmlns: html", null,} }
+            }); 
 
             addchildren.parameterlist = new List<parameterlist>(new parameterlist[] {
                 new parameterlist() {parameter = new List<string>{ "pre", null, null,"code","class","code" }}
