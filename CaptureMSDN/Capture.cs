@@ -280,15 +280,12 @@ namespace CaptureMSDN
             param.Nodeoperate.Add(removekeep);
             NodeOperate delattribute = new NodeOperate();
 
-            NodeOperate addchildren = new NodeOperate();
             param.Nodeoperate.Add(delattribute);
 
-            param.Nodeoperate.Add(addchildren);
 
 
             removeall.method = MethodEnum.RemoveAll;
             removekeep.method = MethodEnum.Remove;
-            addchildren.method = MethodEnum.AddChildren;
             delattribute.method = MethodEnum.DelAttribute;
 
 
@@ -325,9 +322,7 @@ namespace CaptureMSDN
                 new parameterlist() {parameter = new List<string>{ "h2", "xmlns: html", null,} }
             }); 
 
-            addchildren.parameterlist = new List<parameterlist>(new parameterlist[] {
-                new parameterlist() {parameter = new List<string>{ "pre", null, null,"code","class","code" }}
-            });
+
 
             return param;
 
